@@ -59,12 +59,30 @@ class HyperparameterOptimizier():
                 # If there is no range set by the user
                 adam_lr = 1e-3
             optimizer = getattr(optim, optimizer_name)(self.model.parameters(), adam_lr)
+
         elif optimizer_name == "RMSprop":
             if "RMSprop_lr" in self.hyperparameters.keys():
                 RMSprop_lr = trial.suggest_float("lr", self.hyperparameters["RMSprop_lr"][0], self.hyperparameters["RMSprop_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                RMSprop_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
             else:
                 RMSprop_lr = 1e-3
             optimizer = getattr(optim, optimizer_name)(self.model.parameters(), RMSprop_lr)
+
+        elif optimizer_name == "SGD":
+            if "SGD_lr" in self.hyperparameters.keys():
+                SGD_lr = trial.suggest_float("lr", self.hyperparameters["SGD_lr"][0], self.hyperparameters["SGD_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                SGD_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else: 
+                SGD_lr = 1e-1
+            if "SGD_momentum" in self.hyperparameters.keys():
+                SGD_momentum = trial.suggest_float("momentum", self.hyperparameters["SGD_momentum"][0], self.hyperparameters["SGD_momentum"][1])
+            elif "momentum" in self.hyperparameters.keys():
+                SGD_momentum = trial.suggest_float("momentum", self.hyperparameters["momentum"][0], self.hyperparameters["momentum"][1])
+            else:
+                SGD_momentum = 0
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), SGD_lr, SGD_momentum)
 
         else:
             optimizer = getattr(optim, optimizer_name)(self.model.parameters(), 1e-1)
@@ -144,7 +162,9 @@ if __name__ == "__main__":
                                                         test_loader, 
                                                         hyperparameters={"optimizer": ['Adam', 'RMSprop', 'SGD'],
                                                                         "lr": [1e-5, 1e-1],
-                                                                        "RMSprop_lr": [1e-4,1e-2]})
+                                                                        "RMSprop_lr": [1e-4,1e-2],
+                                                                        "SGD_lr": [1e-4, 1e-1],
+                                                                        "SGD_momentum": [0.9, 0.99]})
 
     # nn_architecture_search = ... TODO: Make a class for NAS
 
