@@ -45,12 +45,38 @@ class HyperparameterOptimizier():
         self.test_loader = test_loader
         self.hyperparameters = hyperparameters
 
+    def create_optimizer(self, trial):
+        optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
+
+        if optimizer_name == "Adam":
+            if "adam_lr" in self.hyperparameters.keys(): 
+                # Specific range for this specific optimizer
+                adam_lr = trial.suggest_float("lr", self.hyperparameters["adam_lr"][0], self.hyperparameters["adam_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                # Generic range for all optimizers (user wants to use the same range for all optimizers)
+                adam_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else:
+                # If there is no range set by the user
+                adam_lr = 1e-3
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), adam_lr)
+        elif optimizer_name == "RMSprop":
+            if "RMSprop_lr" in self.hyperparameters.keys():
+                RMSprop_lr = trial.suggest_float("lr", self.hyperparameters["RMSprop_lr"][0], self.hyperparameters["RMSprop_lr"][1])
+            else:
+                RMSprop_lr = 1e-3
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), RMSprop_lr)
+
+        else:
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), 1e-1)
+
+        return optimizer
+
     def objective(self, trial):
         criterion =  nn.CrossEntropyLoss()
-        optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
-        # optimizer = getattr(optim, optimizer_name)(self.model.parameters(), lr=1e-4) 
-        learning_rate = trial.suggest_float("learning_rate", self.hyperparameters["learning_rate"][0], self.hyperparameters["learning_rate"][1])
-        optimizer = getattr(optim, optimizer_name)(self.model.parameters(), learning_rate)
+        # optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
+        # # optimizer = getattr(optim, optimizer_name)(self.model.parameters(), lr=1e-4) 
+        # learning_rate = trial.suggest_float("learning_rate", self.hyperparameters["learning_rate"][0], self.hyperparameters["learning_rate"][1])
+        optimizer = self.create_optimizer(trial)
         
         # Training loop
         for epoch in range (n_epochs):
@@ -89,8 +115,8 @@ class HyperparameterOptimizier():
         return acc
 
     def study_and_optimize(self):
-        study = optuna.create_study(direction="maximize", study_name="trial")
-        study.optimize(self.objective, n_trials=100, timeout=600)
+        study = optuna.create_study(direction="maximize", study_name="pytorch-trial-nnlo")
+        study.optimize(self.objective, n_trials=30, timeout=600)
 
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -117,7 +143,10 @@ if __name__ == "__main__":
                                                         train_loader, 
                                                         test_loader, 
                                                         hyperparameters={"optimizer": ['Adam', 'RMSprop', 'SGD'],
-                                                                        "learning_rate": [1e-5, 1e-1]})
+                                                                        "lr": [1e-5, 1e-1],
+                                                                        "RMSprop_lr": [1e-4,1e-2]})
+
+    # nn_architecture_search = ... TODO: Make a class for NAS
 
     hyperparameter_optimizier.study_and_optimize()
 
