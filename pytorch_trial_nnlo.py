@@ -47,8 +47,9 @@ class HyperparameterOptimizier():
 
     def create_optimizer(self, trial):
         optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
-
+        
         if optimizer_name == "Adam":
+            # Learning rate
             if "adam_lr" in self.hyperparameters.keys(): 
                 # Specific range for this specific optimizer
                 adam_lr = trial.suggest_float("lr", self.hyperparameters["adam_lr"][0], self.hyperparameters["adam_lr"][1])
@@ -56,9 +57,132 @@ class HyperparameterOptimizier():
                 # Generic range for all optimizers (user wants to use the same range for all optimizers)
                 adam_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
             else:
-                # If there is no range set by the user
+                # If there is no range set by the user, we use the default one
                 adam_lr = 1e-3
-            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), adam_lr)
+            # Betas - coefficient used for computing running avarages of gradient and its square
+            if "adam_beta1" in self.hyperparameters.keys():
+                adam_beta1 = trial.suggest_float("beta1", self.hyperparameters["adam_beta1"][0], self.hyperparameters["adam_beta1"][1])
+            else:
+                adam_beta1 = 0.9
+            if "adam_beta2" in self.hyperparameters.keys():
+                adam_beta2 = trial.suggest_float("beta2", self.hyperparameters["adam_beta2"][0], self.hyperparameters["adam_beta2"][1])
+            else:
+                adam_beta2 = 0.999
+            # Weight decay (L2 penalty)
+            if "adam_weight_decay" in self.hyperparameters.keys():
+                adam_weight_decay = trial.suggest_float("weight_decay", self.hyperparameters["adam_weight_decay"][0], self.hyperparameters["adam_weight_decay"][1])
+            else:
+                adam_weight_decay = 0
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), adam_lr, (adam_beta1, adam_beta2), adam_weight_decay)
+
+        elif optimizer_name == "AdamW":
+            # Learning rate
+            if "AdamW_lr" in self.hyperparameters.keys(): 
+                # Specific range for this specific optimizer
+                AdamW_lr = trial.suggest_float("lr", self.hyperparameters["AdamW_lr"][0], self.hyperparameters["AdamW_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                # Generic range for all optimizers (user wants to use the same range for all optimizers)
+                AdamW_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else:
+                # If there is no range set by the user, we use the default one
+                AdamW_lr = 1e-3
+            # Betas - coefficient used for computing running avarages of gradient and its square
+            if "AdamW_beta1" in self.hyperparameters.keys():
+                AdamW_beta1 = trial.suggest_float("beta1", self.hyperparameters["AdamW_beta1"][0], self.hyperparameters["AdamW_beta1"][1])
+            else:
+                AdamW_beta1 = 0.9
+            if "AdamW_beta2" in self.hyperparameters.keys():
+                AdamW_beta2 = trial.suggest_float("beta2", self.hyperparameters["AdamW_beta2"][0], self.hyperparameters["AdamW_beta2"][1])
+            else:
+                AdamW_beta2 = 0.999
+            # Weight decay (L2 penalty)
+            if "AdamW_weight_decay" in self.hyperparameters.keys():
+                AdamW_weight_decay = trial.suggest_float("weight_decay", self.hyperparameters["AdamW_weight_decay"][0], self.hyperparameters["AdamW_weight_decay"][1])
+            else:
+                AdamW_weight_decay = 0.01
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), AdamW_lr, (AdamW_beta1, AdamW_beta2), AdamW_weight_decay)
+
+        elif optimizer_name == "SparseAdam":
+            #   Implements lazy version of Adam algorithm suitable for sparse tensors.
+            #   In this variant, only moments that show up in the gradient get updated, and only those portions of the gradient get applied to the parameters.
+
+            # Learning rate
+            if "SparseAdam_lr" in self.hyperparameters.keys(): 
+                # Specific range for this specific optimizer
+                SparseAdam_lr = trial.suggest_float("lr", self.hyperparameters["SparseAdam_lr"][0], self.hyperparameters["SparseAdam_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                # Generic range for all optimizers (user wants to use the same range for all optimizers)
+                SparseAdam_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else:
+                # If there is no range set by the user, we use the default one
+                SparseAdam_lr = 1e-3
+            # Betas - coefficient used for computing running avarages of gradient and its square
+            if "SparseAdam_beta1" in self.hyperparameters.keys():
+                SparseAdam_beta1 = trial.suggest_float("beta1", self.hyperparameters["SparseAdam_beta1"][0], self.hyperparameters["SparseAdam_beta1"][1])
+            else:
+                SparseAdam_beta1 = 0.9
+            if "SparseAdam_beta2" in self.hyperparameters.keys():
+                SparseAdam_beta2 = trial.suggest_float("beta2", self.hyperparameters["SparseAdam_beta2"][0], self.hyperparameters["SparseAdam_beta2"][1])
+            else:
+                SparseAdam_beta2 = 0.999
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), SparseAdam_lr, (SparseAdam_beta1, SparseAdam_beta2))
+
+        elif optimizer_name == "Adadelta":
+            if "Adadelta_lr" in self.hyperparameters.keys():
+                Adadelta_lr = trial.suggest_float("lr", self.hyperparameters["Adadelta_lr"][0], self.hyperparameters["Adadelta_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                Adadelta_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else:
+                Adadelta_lr = 1.0
+            if "Adadelta_rho" in self.hyperparameters.keys():
+                Adadelta_rho = trial.suggest_float("rho", self.hyperparameters["Adadelta_rho"][0], self.hyperparameters["Adadelta_rho"][1])
+            else:
+                Adadelta_rho = 0.9
+            # Weight decay (L2 penalty)
+            if "Adadelta_weight_decay" in self.hyperparameters.keys():
+                Adadelta_weight_decay = trial.suggest_float("weight_decay", self.hyperparameters["Adadelta_weight_decay"][0], self.hyperparameters["Adadelta_weight_decay"][1])
+            else:
+                Adadelta_weight_decay = 0
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), Adadelta_lr, Adadelta_rho, Adadelta_weight_decay)
+
+        elif optimizer_name == "Adagrad":
+            if "Adagrad_lr" in self.hyperparameters.keys():
+                Adagrad_lr = trial.suggest_float("lr", self.hyperparameters["Adagrad_lr"][0], self.hyperparameters["Adagrad_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                Adagrad_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else:
+                Adagrad_lr = 0.01
+            if "Adagrad_lr_decay" in self.hyperparameters.keys():
+                Adagrad_lr_decay = trial.suggest_float("lr_decay", self.hyperparameters["Adagrad_lr_decay"][0], self.hyperparameters["Adagrad_lr_decay"][1])
+            else:
+                Adagrad_lr_decay = 0
+            if "Adagrad_weight_decay" in self.hyperparameters.keys():
+                Adagrad_weight_decay = trial.suggest_float("weight_decay", self.hyperparameters["Adagrad_weight_decay"][0], self.hyperparameters["Adagrad_weight_decay"][1])
+            else:
+                Adagrad_weight_decay = 0
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), Adagrad_lr, Adagrad_lr_decay, Adagrad_weight_decay)
+
+        elif optimizer_name == "Adamax":
+            if "Adamax_lr" in self.hyperparameters.keys():
+                Adamax_lr = trial.suggest_float("lr", self.hyperparameters["Adamax_lr"][0], self.hyperparameters["Adamax_lr"][1])
+            elif "lr" in self.hyperparameters.keys():
+                Adamax_lr = trial.suggest_float("lr", self.hyperparameters["lr"][0], self.hyperparameters["lr"][1])
+            else:
+                Adamax_lr = 0.002
+            if "Adamax_weight_decay" in self.hyperparameters.keys():
+                Adamax_weight_decay = trial.suggest_float("weight_decay", self.hyperparameters["Adamax_weight_decay"][0], self.hyperparameters["Adamax_weight_decay"][1])
+            else:
+                Adamax_weight_decay = 0
+            # Betas - coefficient used for computing running avarages of gradient and its square
+            if "Adamax_beta1" in self.hyperparameters.keys():
+                Adamax_beta1 = trial.suggest_float("beta1", self.hyperparameters["Adamax_beta1"][0], self.hyperparameters["Adamax_beta1"][1])
+            else:
+                Adamax_beta1 = 0.9
+            if "Adamax_beta2" in self.hyperparameters.keys():
+                Adamax_beta2 = trial.suggest_float("beta2", self.hyperparameters["Adamax_beta2"][0], self.hyperparameters["Adamax_beta2"][1])
+            else:
+                Adamax_beta2 = 0.999
+            optimizer = getattr(optim, optimizer_name)(self.model.parameters(), Adamax_lr, (Adamax_beta1, Adamax_beta2), Adamax_weight_decay)
 
         elif optimizer_name == "RMSprop":
             if "RMSprop_lr" in self.hyperparameters.keys():
@@ -160,11 +284,18 @@ if __name__ == "__main__":
     hyperparameter_optimizier = HyperparameterOptimizier(define_model(), 
                                                         train_loader, 
                                                         test_loader, 
-                                                        hyperparameters={"optimizer": ['Adam', 'RMSprop', 'SGD'],
+                                                        hyperparameters={"optimizer": ['Adam', 'RMSprop', 'SGD', 'Adadelta', 'AdamW', 'Adamax'],
                                                                         "lr": [1e-5, 1e-1],
                                                                         "RMSprop_lr": [1e-4,1e-2],
                                                                         "SGD_lr": [1e-4, 1e-1],
-                                                                        "SGD_momentum": [0.9, 0.99]})
+                                                                        "SGD_momentum": [0.9, 0.99],
+                                                                        "adam_beta1": [0.89, 0.91],
+                                                                        "adam_beta2": [0.990, 0.999],
+                                                                        "AdamW_beta1": [0.89, 0.91],
+                                                                        "AdamW_beta2": [0.990, 0.999],
+                                                                        "Adamax_beta1": [0.895, 0.910],
+                                                                        "Adamax_beta2": [0.995, 0.998]
+                                                                        })
 
     # nn_architecture_search = ... TODO: Make a class for NAS
 
