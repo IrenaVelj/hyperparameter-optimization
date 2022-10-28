@@ -215,9 +215,7 @@ class HyperparameterOptimizier():
 
     def objective(self, trial):
         criterion =  nn.CrossEntropyLoss()
-        # optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
-        # # optimizer = getattr(optim, optimizer_name)(self.model.parameters(), lr=1e-4) 
-        # learning_rate = trial.suggest_float("learning_rate", self.hyperparameters["learning_rate"][0], self.hyperparameters["learning_rate"][1])
+
         optimizer = self.create_optimizer(trial)
         
         # Training loop
