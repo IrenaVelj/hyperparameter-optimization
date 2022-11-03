@@ -8,14 +8,15 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 from optuna.trial import TrialState
 
-
 input_size = 784
-n_classes = 10
+CLASSES = 10
 batch_size = 8
-n_epochs = 10
-device = torch.device("cuda")
+n_epochs = 50
+device = torch.device("cuda:1")
 N_TRAIN_EXAMPLES = batch_size*40
 N_VALID_EXAMPLES = batch_size * 20
+
+activation_map = {'ReLU': nn.ReLU(), 'LeakyReLU': nn.LeakyReLU(), 'Sigmoid': nn.Sigmoid() }
 
 def get_data(batch_size):
     train_dataset = torchvision.datasets.MNIST(root = "./data", train = True, transform = transforms.ToTensor() ,download = True)
@@ -24,22 +25,25 @@ def get_data(batch_size):
     test_loader = torch.utils.data.DataLoader(dataset = test_dataset, batch_size = batch_size, shuffle = False)
     return train_loader, test_loader
 
-class NeuralNet(nn.Module):
-    def __init__(self, trial, input_size, hidden_size, num_classes):
-        super(NeuralNet, self).__init__()
-        self.l1 = nn.Linear(input_size, hidden_size)
-        self.relu = nn.ReLU()
-        self.l2 = nn.Linear(hidden_size, num_classes)
-    def forward (self, x):
-        out = self.l1(x)
-        out = self.relu(out)
-        out = self.l2(out)
-        return out
 
 
 def define_model(trial, param):
     # We optimize the number of layers, hidden units and dropout ratio in each layer.
-    return NeuralNet(trial, input_size, param, n_classes)
+    n_layers = param['n_layers']
+    layers = []
+    in_features = 28 * 28
+    for i in range(n_layers):
+        out_features = param['hidden_size_{}'.format(i+1)]
+        layers.append(nn.Linear(in_features, out_features))
+        layers.append(activation_map[param['activation']])
+        p = param['dropout_{}'.format(i+1)]
+        layers.append(nn.Dropout(p))
+
+        in_features = out_features
+    layers.append(nn.Linear(in_features, CLASSES))
+    layers.append(nn.LogSoftmax(dim=1))
+
+    return nn.Sequential(*layers)
 
 class NeuralArchitectureOptimizer():
     def __init__(self, train_loader, test_loader, model_fcn, architecture_parameters) -> None:
@@ -49,8 +53,18 @@ class NeuralArchitectureOptimizer():
         self.architecture_parameters = architecture_parameters
 
     def create_architecture(self, trial):
+        param = {}
         for architecture_param in self.architecture_parameters.keys():
-            param = trial.suggest_int(architecture_param, self.architecture_parameters[architecture_param][0], self.architecture_parameters[architecture_param][1])
+            if(type(architecture_parameters[architecture_param]) is list):
+                if (type(architecture_parameters[architecture_param][0]) is int):
+                    param[architecture_param] = trial.suggest_int(architecture_param, self.architecture_parameters[architecture_param][0], self.architecture_parameters[architecture_param][1])
+                elif (type(architecture_parameters[architecture_param][0]) is float):
+                    param[architecture_param] = trial.suggest_float(architecture_param, self.architecture_parameters[architecture_param][0], self.architecture_parameters[architecture_param][1])
+                else:
+                    param[architecture_param] = trial.suggest_categorical(architecture_param, self.architecture_parameters[architecture_param])
+            else:
+                param[architecture_param] = architecture_parameters[architecture_param]
+
         model = self.model_fcn(trial, param)
         return model
         
@@ -98,7 +112,7 @@ class NeuralArchitectureOptimizer():
 
     def study_and_optimize(self):
         study = optuna.create_study(direction="maximize", study_name="nas-trial-nnlo")
-        study.optimize(self.objective, n_trials=30, timeout=600)
+        study.optimize(self.objective, n_trials=150, timeout=600)
 
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -121,7 +135,12 @@ class NeuralArchitectureOptimizer():
 if __name__ == "__main__":
 
     train_loader, test_loader = get_data(batch_size)
-    
-    nn_architecture_search = NeuralArchitectureOptimizer(train_loader, test_loader, define_model, architecture_parameters={'hidden_size': [90, 100]} )
+    architecture_parameters={'hidden_size_1': [10, 20], 'hidden_size_2': 5,
+    'hidden_size_3': [10, 20], 'hidden_size_4': [10, 20], 'dropout_1': [0.1,0.5],
+    'dropout_2': 0.3, 'dropout_3': [0.1,0.5], 'dropout_4': [0.1,0.5],
+    'activation': ['ReLU', 'LeakyReLU', 'Sigmoid'],
+     'n_layers': [1, 4]}
 
+    nn_architecture_search = NeuralArchitectureOptimizer(train_loader, test_loader, define_model, 
+     architecture_parameters)
     nn_architecture_search.study_and_optimize()
