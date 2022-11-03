@@ -8,6 +8,8 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 from optuna.trial import TrialState
 
+
+#TODO: Eliminate as much as we could from hardcoded variables/layers
 input_size = 784
 CLASSES = 10
 batch_size = 8
@@ -16,8 +18,10 @@ device = torch.device("cuda:1")
 N_TRAIN_EXAMPLES = batch_size*40
 N_VALID_EXAMPLES = batch_size * 20
 
+#Activation functions map, #TODO: Add more functions
 activation_map = {'ReLU': nn.ReLU(), 'LeakyReLU': nn.LeakyReLU(), 'Sigmoid': nn.Sigmoid() }
 
+#TODO: Take batch size from user
 def get_data(batch_size):
     train_dataset = torchvision.datasets.MNIST(root = "./data", train = True, transform = transforms.ToTensor() ,download = True)
     test_dataset = torchvision.datasets.MNIST(root = "./data", train = False, transform = transforms.ToTensor())
@@ -28,10 +32,16 @@ def get_data(batch_size):
 
 
 def define_model(trial, param):
+    """ 
+    Model builder. It builds a model for each different set of samples varibles.
+    Params:
+        - Param => dict. It contains the sampled variables from optuna.
+
+    """
     # We optimize the number of layers, hidden units and dropout ratio in each layer.
     n_layers = param['n_layers']
     layers = []
-    in_features = 28 * 28
+    in_features = 28 * 28 #TODO: Take from as input from user
     for i in range(n_layers):
         out_features = param['hidden_size_{}'.format(i+1)]
         layers.append(nn.Linear(in_features, out_features))
@@ -54,6 +64,7 @@ class NeuralArchitectureOptimizer():
 
     def create_architecture(self, trial):
         param = {}
+        #TODO: Try to find a more optimal solution to float/int/categorical 
         for architecture_param in self.architecture_parameters.keys():
             if(type(architecture_parameters[architecture_param]) is list):
                 if (type(architecture_parameters[architecture_param][0]) is int):
