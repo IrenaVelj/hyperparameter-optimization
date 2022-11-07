@@ -18,8 +18,41 @@ device = torch.device("cuda:1")
 N_TRAIN_EXAMPLES = batch_size*40
 N_VALID_EXAMPLES = batch_size * 20
 
-#Activation functions map, #TODO: Add more functions
-activation_map = {'ReLU': nn.ReLU(), 'LeakyReLU': nn.LeakyReLU(), 'Sigmoid': nn.Sigmoid() }
+# Activation functions map
+# Activations that exist in Torch https://pytorch.org/docs/stable/nn.html
+activation_map = {
+                    'LeakyReLU': nn.LeakyReLU(),
+                    'Sigmoid': nn.Sigmoid(),
+                    'Threshold': nn.Threshold(),
+                    'ReLU': nn.ReLU(),
+                    'RReLU': nn.RReLU(),
+                    'Hardtanh': nn.Hardtanh(),
+                    'ReLU6': nn.ReLU6(),
+                    'Sigmoid': nn.Sigmoid(),
+                    'Hardsigmoid': nn.Hardsigmoid(),
+                    'Tanh': nn.Tanh(),
+                    'SiLU': nn.SiLU(),
+                    'Mish': nn.Mish(),
+                    'Hardswish': nn.Hardswish(),
+                    'ELU': nn.ELU(),
+                    'CELU': nn.CELU(),
+                    'SELU': nn.SELU(),
+                    'GLU': nn.GLU(),
+                    'GELU': nn.GELU(),
+                    'Hardshrink': nn.Hardshrink(),
+                    'LeakyReLU': nn.LeakyReLU(),
+                    'LogSigmoid': nn.LogSigmoid(),
+                    'Softplus': nn.Softplus(),
+                    'Softshrink': nn.Softshrink(),
+                    'MultiheadAttention': nn.MultiheadAttention(),
+                    'PReLU': nn.PReLU(),
+                    'Softsign': nn.Softsign(),
+                    'Tanhshrink': nn.Tanhshrink(),
+                    'Softmin': nn.Softmin(),
+                    'Softmax': nn.Softmax(),
+                    'Softmax2d': nn.Softmax2d(),
+                    'LogSoftmax': nn.LogSoftmax()
+                }
 
 #TODO: Take batch size from user
 def get_data(batch_size):
@@ -146,12 +179,17 @@ class NeuralArchitectureOptimizer():
 if __name__ == "__main__":
 
     train_loader, test_loader = get_data(batch_size)
-    architecture_parameters={'hidden_size_1': [10, 20], 'hidden_size_2': 5,
-    'hidden_size_3': [10, 20], 'hidden_size_4': [10, 20], 'dropout_1': [0.1,0.5],
-    'dropout_2': 0.3, 'dropout_3': [0.1,0.5], 'dropout_4': [0.1,0.5],
-    'activation': ['ReLU', 'LeakyReLU', 'Sigmoid'],
-     'n_layers': [1, 4]}
+    architecture_parameters = {'hidden_size_1': [10, 20],
+                                'hidden_size_2': 5,
+                                'hidden_size_3': [10, 20],
+                                'hidden_size_4': [10, 20],
+                                'dropout_1': [0.1,0.5],
+                                'dropout_2': 0.3,
+                                'dropout_3': [0.1,0.5],
+                                'dropout_4': [0.1,0.5],
+                                'activation': ['ReLU', 'LeakyReLU', 'Sigmoid'],
+                                'n_layers': [1, 4]
+                                }
 
-    nn_architecture_search = NeuralArchitectureOptimizer(train_loader, test_loader, define_model, 
-     architecture_parameters)
+    nn_architecture_search = NeuralArchitectureOptimizer(train_loader, test_loader, define_model, architecture_parameters)
     nn_architecture_search.study_and_optimize()
