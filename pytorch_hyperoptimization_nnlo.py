@@ -6,18 +6,13 @@ import torchvision.transforms as transforms
 import torch.optim as optim
 from optuna.trial import TrialState
 
-
-input_size = 784
-hidden_size = 100
-n_classes = 10
-batch_size = 8
-n_epochs = 10
+batch_size = 8  # TODO Add batch size to be hyperparameter to be optimized
 device = torch.device("cuda")
 N_TRAIN_EXAMPLES = batch_size*40
 N_VALID_EXAMPLES = batch_size * 20
 
 class NeuralNet(nn.Module):
-    def __init__(self,input_size, hidden_size, num_classes):
+    def __init__(self, input_size=784, hidden_size=100, num_classes=10):
         super(NeuralNet, self).__init__()
         self.l1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
@@ -29,7 +24,7 @@ class NeuralNet(nn.Module):
         return out
 
 def define_model():
-    return NeuralNet(input_size, hidden_size, n_classes)
+    return NeuralNet()
 
 def get_data(batch_size):
     train_dataset = torchvision.datasets.MNIST(root = "./data", train = True, transform = transforms.ToTensor() ,download = True)
@@ -39,7 +34,7 @@ def get_data(batch_size):
     return train_loader, test_loader
 
 class HyperparameterOptimizier():
-    def __init__(self, model, train_loader, test_loader, direction, hyperparameters, study_name="study-test", num_trials=20, timeout=300) -> None:
+    def __init__(self, model, train_loader, test_loader, direction, hyperparameters, study_name="study-test", num_trials=20, timeout=300, n_epochs=22) -> None:
         self.model = model.to(device)
         self.train_loader = train_loader
         self.test_loader = test_loader
@@ -48,6 +43,7 @@ class HyperparameterOptimizier():
         self.study_name = study_name
         self.num_trials = num_trials
         self.timeout = timeout
+        self.n_epochs = n_epochs
 
     def create_optimizer(self, trial):
         optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
@@ -223,6 +219,11 @@ class HyperparameterOptimizier():
         optimizer = self.create_optimizer(trial)
         
         # Training loop
+        if "n_epochs" in self.hyperparameters.keys():
+            n_epochs = trial.suggest_int("n_epochs", self.hyperparameters["n_epochs"][0], self.hyperparameters["n_epochs"][1])
+        else:
+            n_epochs = self.n_epochs
+
         for epoch in range (n_epochs):
             for i, (images, labels) in enumerate(self.train_loader):
                 # Limiting training data for faster epochs.
@@ -297,7 +298,8 @@ if __name__ == "__main__":
                                                                         "AdamW_beta1": [0.89, 0.91],
                                                                         "AdamW_beta2": [0.990, 0.999],
                                                                         "Adamax_beta1": [0.895, 0.910],
-                                                                        "Adamax_beta2": [0.995, 0.998]
+                                                                        "Adamax_beta2": [0.995, 0.998],
+                                                                        "n_epochs": [10, 20] 
                                                                         },
                                                         study_name = "nnlo-hyperopt-test",
                                                         num_trials = 30,
