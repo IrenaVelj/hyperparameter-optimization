@@ -39,11 +39,15 @@ def get_data(batch_size):
     return train_loader, test_loader
 
 class HyperparameterOptimizier():
-    def __init__(self, model, train_loader, test_loader, hyperparameters) -> None:
+    def __init__(self, model, train_loader, test_loader, direction, hyperparameters, study_name="study-test", num_trials=20, timeout=300) -> None:
         self.model = model.to(device)
         self.train_loader = train_loader
         self.test_loader = test_loader
+        self.direction = direction
         self.hyperparameters = hyperparameters
+        self.study_name = study_name
+        self.num_trials = num_trials
+        self.timeout = timeout
 
     def create_optimizer(self, trial):
         optimizer_name = trial.suggest_categorical("optimizer", self.hyperparameters["optimizer"])
@@ -255,8 +259,8 @@ class HyperparameterOptimizier():
         return acc
 
     def study_and_optimize(self):
-        study = optuna.create_study(direction="maximize", study_name="pytorch-trial-nnlo")
-        study.optimize(self.objective, n_trials=30, timeout=600)
+        study = optuna.create_study(direction=self.direction, study_name=self.study_name)
+        study.optimize(func=self.objective, n_trials=self.num_trials, timeout=self.timeout)
 
         pruned_trials = study.get_trials(deepcopy=False, states=[TrialState.PRUNED])
         complete_trials = study.get_trials(deepcopy=False, states=[TrialState.COMPLETE])
@@ -282,6 +286,7 @@ if __name__ == "__main__":
     hyperparameter_optimizier = HyperparameterOptimizier(define_model(), 
                                                         train_loader, 
                                                         test_loader, 
+                                                        direction = "maximize",
                                                         hyperparameters={"optimizer": ['Adam', 'RMSprop', 'SGD', 'Adadelta', 'AdamW', 'Adamax'],
                                                                         "lr": [1e-5, 1e-1],
                                                                         "RMSprop_lr": [1e-4,1e-2],
@@ -293,9 +298,10 @@ if __name__ == "__main__":
                                                                         "AdamW_beta2": [0.990, 0.999],
                                                                         "Adamax_beta1": [0.895, 0.910],
                                                                         "Adamax_beta2": [0.995, 0.998]
-                                                                        })
-
-    # nn_architecture_search = ... TODO: Make a class for NAS
+                                                                        },
+                                                        study_name = "nnlo-hyperopt-test",
+                                                        num_trials = 30,
+                                                        timeout = 600)
 
     hyperparameter_optimizier.study_and_optimize()
 
