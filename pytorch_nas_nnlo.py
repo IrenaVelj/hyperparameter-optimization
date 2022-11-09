@@ -14,16 +14,13 @@ input_size = 784
 CLASSES = 10
 batch_size = 8
 n_epochs = 50
-device = torch.device("cuda:1")
+device = torch.device("cuda")
 N_TRAIN_EXAMPLES = batch_size*40
 N_VALID_EXAMPLES = batch_size * 20
 
 # Activation functions map
 # Activations that exist in Torch https://pytorch.org/docs/stable/nn.html
-activation_map = {
-                    'LeakyReLU': nn.LeakyReLU(),
-                    'Sigmoid': nn.Sigmoid(),
-                    'Threshold': nn.Threshold(),
+activation_map =    {'Threshold': nn.Threshold(0.1, 20), # TODO: Think how to integrate activation functions which have additional parameters to be passed, like here.
                     'ReLU': nn.ReLU(),
                     'RReLU': nn.RReLU(),
                     'Hardtanh': nn.Hardtanh(),
@@ -44,7 +41,7 @@ activation_map = {
                     'LogSigmoid': nn.LogSigmoid(),
                     'Softplus': nn.Softplus(),
                     'Softshrink': nn.Softshrink(),
-                    'MultiheadAttention': nn.MultiheadAttention(),
+                    'MultiheadAttention': nn.MultiheadAttention(1000, 4),   # TODO: Think how to integrate activation functions which have additional parameters to be passed, like here.
                     'PReLU': nn.PReLU(),
                     'Softsign': nn.Softsign(),
                     'Tanhshrink': nn.Tanhshrink(),
@@ -187,7 +184,7 @@ if __name__ == "__main__":
                                 'dropout_2': 0.3,
                                 'dropout_3': [0.1,0.5],
                                 'dropout_4': [0.1,0.5],
-                                'activation': ['ReLU', 'LeakyReLU', 'Sigmoid'],
+                                'activation': ['ReLU6', 'SELU'],
                                 'n_layers': [1, 4]
                                 }
 
