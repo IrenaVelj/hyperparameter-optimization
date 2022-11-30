@@ -6,12 +6,12 @@ def objective(trial):
 
 if __name__ == "__main__":
     print("hello")
-    optimizer = Optimizer(study_name=None,    #   Study’s name. If this argument is set to None, a unique name is generated automatically.
+    optimizer = Optimizer(study_name=None,
                             storage=None,
-                            sampler=None,  #   A sampler object that implements background algorithm for value suggestion. If None is specified, TPESampler is used during single-objective optimization and NSGAIISampler during multi-objective optimization.
-                            pruner=None,   #    A pruner object that decides early stopping of unpromising trials. If None is specified, MedianPruner is used as the default.
-                            direction="minimize",    #   Direction of optimization. Set minimize for minimization and maximize for maximization. You can also pass the corresponding StudyDirection object.
-                            load_if_exists=False,   #   Resume. Flag to control the behavior to handle a conflict of study names. In the case where a study named study_name already exists in the storage, a DuplicatedStudyError is raised if load_if_exists is set to False. Otherwise, the creation of the study is skipped, and the existing one is returned.
+                            sampler=None, 
+                            pruner=None,  
+                            direction="minimize",   
+                            load_if_exists=False,   
                             directions=None)
 
     optimizer.search(objective_fcn=objective, n_trials=10)
